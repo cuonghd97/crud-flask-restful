@@ -27,7 +27,8 @@ class UserRegister(Resource):
             password=UserModel.hash_pass(data['password']),
             age=data['age']
         )
-        new_user.save_to_db()
+        print(new_user)
+        # new_user.save_to_db()
         access_token = create_access_token(identity=data['username'])
         refresh_token = create_refresh_token(identity=data['username'])
         try:

@@ -14,7 +14,11 @@ class UserModel(db.Model):
 
     def save_to_db(self):
         db.session.add(self)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except exc.SQLAlchemyError as er:
+            print(er)
+
 
     @classmethod
     def find_user_by_name(cls, username):
