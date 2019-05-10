@@ -2,6 +2,8 @@ import bcrypt
 
 from run import db
 
+from sqlalchemy import exc
+
 class UserModel(db.Model):
     __tablename__ = 'users'
 
@@ -51,6 +53,18 @@ class UserModel(db.Model):
         return {'users': to_json(user)}
 
     @classmethod
+    def update(cls, id, data):
+        user = UserModel.query.get(id)
+        try:
+            user.age = data['age']
+            db.session.commit()
+
+            return {'message': 'Success'}
+        except exc.SQLAlchemyError as ex:
+            print(ex)
+            return {'message': 'Error'}
+
+    @classmethod
     def delete_all(cls):
         try:
             rows = db.session.query(cls).delete()
@@ -58,3 +72,19 @@ class UserModel(db.Model):
             return {'message': 'Delete successfully'}
         except:
             return {'message': 'Error'}
+
+
+class RevokedTokenModel(db.Model):
+    __tablename__ = 'revoked_token'
+
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(120))
+
+    def add(self):
+        db.session.add(self)
+        db.session.commit()
+
+    @classmethod
+    def is_jti_blacklisted(cls, jti):
+        query = cls.query.filter_by(jti=jti).first()
+        return bool(query)

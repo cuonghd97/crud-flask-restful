@@ -19,9 +19,16 @@ jwt = JWTManager(app)
 api = Api(app)
 db = SQLAlchemy(app)
 
+
 @app.before_first_request
 def create_tables():
     db.create_all()
+
+@jwt.token_in_blacklist_loader
+def check_if_token_in_blacklist(decrypted_token):
+    jti = decrypted_token['jti']
+
+    return models.RevokedTokenModel.is_jti_blacklisted(jti)
 
 import views, models, resources
 
@@ -32,6 +39,7 @@ api.add_resource(resources.Login, '/login')
 api.add_resource(resources.Info, '/info/<int:id>')
 api.add_resource(resources.AllUsers, '/all-users')
 api.add_resource(resources.TokenRefresh, '/refresh-token')
+api.add_resource(resources.UserLogoutAccess, '/logout')
 
 if __name__ == "__main__":
     app.run()

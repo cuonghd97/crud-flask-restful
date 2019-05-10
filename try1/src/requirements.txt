@@ -1,5 +1,7 @@
 aniso8601==6.0.0
 autopep8==1.4.4
+bcrypt==3.1.6
+cffi==1.12.3
 Click==7.0
 Flask==1.0.2
 Flask-JWT-Extended==3.18.1
@@ -10,6 +12,7 @@ Jinja2==2.10.1
 MarkupSafe==1.1.1
 passlib==1.7.1
 pycodestyle==2.5.0
+pycparser==2.19
 PyJWT==1.7.1
 PyMySQL==0.9.3
 pytz==2019.1

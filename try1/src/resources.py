@@ -7,25 +7,29 @@ from flask_jwt_extended import (create_access_token,
                                 get_jwt_identity,
                                 get_raw_jwt)
 
-from models import UserModel
+from models import UserModel, RevokedTokenModel
 
 parser = reqparse.RequestParser()
-parser.add_argument('username', help='Username can not be none', required=True)
-parser.add_argument('password', help='Password can not be none', required=True)
-parser.add_argument('age', type=int, help='Age must be integer')
 
 class UserRegister(Resource):
     def post(self):
+        parser.add_argument('username', help='Username can not be none', required=True)
+        parser.add_argument('password', help='Password can not be none', required=True)
+        parser.add_argument('age', type=int, help='Age must be integer')
+
         data = parser.parse_args()
         print(data)
-        if UserModel.find_user_by_name(username=data['username']):
-            return {'message': 'User already exist'}
+        # if UserModel.find_user_by_name(username=data['username']):
+        #     return {'message': 'User already exist'}
 
         new_user = UserModel(
             username=data['username'],
             password=UserModel.hash_pass(data['password']),
             age=data['age']
         )
+        new_user.save_to_db()
+        access_token = create_access_token(identity=data['username'])
+        refresh_token = create_refresh_token(identity=data['username'])
         try:
             new_user.save_to_db()
             access_token = create_access_token(identity=data['username'])
@@ -41,6 +45,10 @@ class UserRegister(Resource):
 
 class Login(Resource):
     def post(self):
+
+        parser.add_argument('username', help='Username can not be none', required=True)
+        parser.add_argument('password', help='Password can not be none', required=True)
+
         data = parser.parse_args()
         user = UserModel.find_user_by_name(data['username'])
 
@@ -65,6 +73,13 @@ class Info(Resource):
     def get(self, id):
         return UserModel.get_one(id)
 
+    @jwt_required
+    def patch(self, id):
+        parser.add_argument('age', type=int, help='Age must be integer')
+
+        data = parser.parse_args()
+        return UserModel.update(id, data)
+
 
 class AllUsers(Resource):
     @jwt_required
@@ -86,3 +101,19 @@ class TokenRefresh(Resource):
         return {
             'access_token': access_token
         }
+
+
+class UserLogoutAccess(Resource):
+    @jwt_required
+    def post(self):
+        jti = get_raw_jwt()['jti']
+        revoked_token = RevokedTokenModel(jti=jti)
+        revoked_token.add()
+        return {'message': 'Refresh token has been revoked'}
+        try:
+            revoked_token = RevokedTokenModel(jti=jti)
+            revoked_token.add()
+            return {'message': 'Refresh token has been revoked'}
+        except:
+            return {'message': 'Some thing went wrong'}, 500
+
